@@ -1,0 +1,101 @@
+###testing for less transmissions..(13 Mar 22)
+    #for 2001-2500 transmissions
+df = pd.read_csv("/content/data_sheet4.csv")
+df.columns=["TimeStamp","Detector","Bit received","Bit index(/1250)","Bit index(%ile) (1250)", 
+            "Index of predicted bit","Bit predicted 700 first bit 0 (1250)", 
+            "Bit predicted 700 first bit 1 (1250)","Bit index(/2500)","Bit index(%ile) (2500)",
+            "Bit predicted 700 first bit 0 (2500)","Bit predicted 700 first bit 1 (2500)"]
+#if total entries, do nothing
+#if first 500 timestamps 
+df=df[:2001]
+#if first 2000 timestamps 
+df=df[:2001]
+#if first 5000 timestamps df=df[:5001]
+
+#####parameters
+#threshold_min=100
+threshold_min=1
+#threshold_max=1100
+threshold_max=1250
+time_period=1250
+bit_width=480
+
+i=0
+df["Bit index(/2500)"]=""
+for i in range(len(df["Detector"])):
+  #df["Bit index(/2500)"][i]=int(df["TimeStamp"][i]/2500)
+  #df["Bit index(%ile) (1250)"][i]=df["TimeStamp"][i]%1250
+  #df["Bit index(%ile) (2500)"][i]=df["TimeStamp"][i]%2500
+  if(df["Bit index(%ile) (1250)"][i]<threshold_min):
+    df["Index of predicted bit"][i]=df["Bit index(/1250)"][i]
+  elif(df["Bit index(%ile) (1250)"][i]>threshold_max):
+    df["Index of predicted bit"][i]=df["Bit index(/1250)"][i]+2
+  elif(df["Bit index(%ile) (1250)"][i]<bit_width):
+    df["Index of predicted bit"][i]=df["Bit index(/1250)"][i]+1
+
+  '''else:
+    df["Index of predicted bit"][i]=df["Bit index(/1250)"][i]+1'''
+
+j=0
+for j in range(len(df["Detector"])):
+  if((df["Index of predicted bit"][j])%2==0):         #if F==even:
+    df["Bit predicted 700 first bit 0 (1250)"][j]=1     #G=1
+  elif((df["Index of predicted bit"][j])%2!=0):        #elif F==odd:
+    df["Bit predicted 700 first bit 0 (1250)"][j]=0     #G=0
+
+k=0
+for k in range(len(df["Detector"])):
+  if(df["Bit predicted 700 first bit 0 (1250)"][k]==1): #for H reverse G
+    df["Bit predicted 700 first bit 1 (1250)"][k]=0
+  elif(df["Bit predicted 700 first bit 0 (1250)"][k]==0):
+    df["Bit predicted 700 first bit 1 (1250)"][k]=1
+
+l=0
+for l in range(len(df["Detector"])):
+  if(df["Bit index(%ile) (2500)"][l]>time_period):
+    if((df["Bit index(%ile) (2500)"][l]%time_period<threshold_min) or (df["Bit index(%ile) (2500)"][l]%time_period>threshold_max)):
+      df["Bit predicted 700 first bit 0 (2500)"][l]=0
+    else:
+      df["Bit predicted 700 first bit 0 (2500)"][l]=1      
+  elif(df["Bit index(%ile) (2500)"][l]<time_period):
+    if((df["Bit index(%ile) (2500)"][l]%time_period<threshold_min) or (df["Bit index(%ile) (2500)"][l]%time_period>threshold_max)):
+      df["Bit predicted 700 first bit 0 (2500)"][l]=0
+    else:
+      df["Bit predicted 700 first bit 0 (2500)"][l]=1 
+
+#calculate QBER
+
+  #QBER 1250
+count_1250=0
+total_entries_valid_1250=0
+
+  
+m=0
+for m in range(len(df["Detector"])):
+  if(df["Bit index(%ile) (1250)"][m]<bit_width):
+    total_entries_valid_1250+=1
+    if(df["Bit received"][m]!=df["Bit predicted 700 first bit 0 (1250)"][m]):
+      count_1250+=1
+print('Paramaters used:\nThreshold minimum: ',threshold_min,'\nThreshold maximum: ',threshold_max,'\nRepition time period: ',time_period,'\nBit width: ',bit_width,'\n')
+print('qber 1250: ', count_1250/total_entries_valid_1250)
+print('count_1250(numerator)',count_1250)
+print('total entries_1250(denominator)',total_entries_valid_1250)
+
+m=0
+
+
+
+  #QBER 2500
+'''count_2500=0
+total_entries_valid_2500=0
+for m in range(len(df["Detector"])):
+  if(df["Bit index(%ile) (2500)"][m]<bit_width):
+    total_entries_valid_2500+=1
+    if(df["Bit received"][m]!=df["Bit predicted 700 first bit 0 (2500)"][m]):
+      count_2500+=1
+print('qber 2500: ',count_2500/total_entries_valid_2500)
+print('count_2500(numerator)',count_2500)
+print('total entries_2500(denominator)',total_entries_valid_2500)'''
+
+
+#df.to_csv("data_sheet6.csv", index=False)
